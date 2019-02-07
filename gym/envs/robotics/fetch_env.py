@@ -147,14 +147,6 @@ class FetchEnv(robot_env.RobotEnv):
 
         self.sim.forward()
 
-        x = np.random.uniform(1.0, 1.5)
-        y = np.random.uniform(0.3, 1.1)
-        z = np.random.uniform(0.4, 1.0)
-        gripper_target = np.array([x, y, z])
-        self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
-        for _ in range(10):
-            self.sim.step()
-
         return True
 
     def _sample_goal(self):
