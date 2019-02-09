@@ -1,3 +1,5 @@
+from collections import deque
+
 import numpy as np
 
 from gym.envs.robotics import rotations, robot_env, utils
@@ -42,10 +44,18 @@ class FetchEnv(robot_env.RobotEnv):
         self.target_range = target_range
         self.distance_threshold = distance_threshold
         self.reward_type = reward_type
+        self.initial_block_positions = None
+        self.fixed_goal = False
+        self.fixed_goal_pos = None
 
         super(FetchEnv, self).__init__(
             model_path=model_path, n_substeps=n_substeps, n_actions=4,
             initial_qpos=initial_qpos)
+
+    def set_n_initial_block_positions(self, n):
+        self.initial_block_positions = deque()
+        for _ in range(n):
+            self.initial_block_positions.append(self.get_random_object_pos())
 
     # GoalEnv methods
     # ----------------------------
@@ -141,9 +151,11 @@ class FetchEnv(robot_env.RobotEnv):
 
         # Randomize start position of object.
         if self.has_object:
-            object_xpos = self.initial_gripper_xpos[:2]
-            while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
-                object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
+            if self.initial_block_positions is None:
+                object_xpos = self.get_random_object_pos()
+            else:
+                object_xpos = self.initial_block_positions[0]
+                self.initial_block_positions.rotate(1)
             object_qpos = self.sim.data.get_joint_qpos('object0:joint')
             assert object_qpos.shape == (7,)
             object_qpos[:2] = object_xpos
@@ -152,7 +164,23 @@ class FetchEnv(robot_env.RobotEnv):
         self.sim.forward()
         return True
 
+    def get_random_object_pos(self):
+        object_xpos = self.initial_gripper_xpos[:2]
+        while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
+            object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range,
+                                                                                 size=2)
+        return object_xpos
+
     def _sample_goal(self):
+        if self.fixed_goal:
+            if self.fixed_goal_pos is None:
+                self.fixed_goal_pos = self.get_random_goal_pos()
+            goal = self.fixed_goal_pos
+        else:
+            goal = self.get_random_goal_pos()
+        return goal.copy()
+
+    def get_random_goal_pos(self):
         if self.has_object:
             goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range, size=3)
             goal += self.target_offset
@@ -161,7 +189,7 @@ class FetchEnv(robot_env.RobotEnv):
                 goal[2] += self.np_random.uniform(0, 0.45)
         else:
             goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-0.15, 0.15, size=3)
-        return goal.copy()
+        return goal
 
     def _is_success(self, achieved_goal, desired_goal):
         d = goal_distance(achieved_goal, desired_goal)
