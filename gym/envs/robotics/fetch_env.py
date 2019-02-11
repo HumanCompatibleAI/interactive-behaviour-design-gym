@@ -14,6 +14,20 @@ class FetchEnv(robot_env.RobotEnv):
     """Superclass for all Fetch environments.
     """
 
+    # We store these instead of calling get_random_object_pos() because the latter doesn't give consistent
+    # results for envs used by POlicyROllouter (e.g. it puts the block in a different place edach time - I guess
+    # there's something wrong with the seeding)
+    all_initial_block_positions = [np.array([1.41465698, 0.89061769]),
+                                   np.array([1.48149746, 0.75540392]),
+                                   np.array([1.26967247, 0.82098414]),
+                                   np.array([1.23680258, 0.75726544]),
+                                   np.array([1.47934786, 0.60016651]),
+                                   np.array([1.19881842, 0.68368295]),
+                                   np.array([1.22164361, 0.62580644]),
+                                   np.array([1.40820382, 0.88643404]),
+                                   np.array([1.24675493, 0.63837527]),
+                                   np.array([1.30236267, 0.65196929])]
+
     def __init__(
         self, model_path, n_substeps, gripper_extra_height, block_gripper,
         has_object, target_in_the_air, target_offset, obj_range, target_range,
@@ -53,9 +67,7 @@ class FetchEnv(robot_env.RobotEnv):
             initial_qpos=initial_qpos)
 
     def set_n_initial_block_positions(self, n):
-        self.initial_block_positions = deque()
-        for _ in range(n):
-            self.initial_block_positions.append(self.get_random_object_pos())
+        self.initial_block_positions = deque(self.all_initial_block_positions[:n])
 
     # GoalEnv methods
     # ----------------------------
