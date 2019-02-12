@@ -61,6 +61,7 @@ class FetchEnv(robot_env.RobotEnv):
         self.initial_block_positions = None
         self.fixed_goal = False
         self.fixed_goal_pos = None
+        self.perturb_initial_position = False
 
         super(FetchEnv, self).__init__(
             model_path=model_path, n_substeps=n_substeps, n_actions=4,
@@ -174,6 +175,14 @@ class FetchEnv(robot_env.RobotEnv):
             self.sim.data.set_joint_qpos('object0:joint', object_qpos)
 
         self.sim.forward()
+
+        if self.perturb_initial_position:
+            cur_pos = self.sim.data.get_site_xpos('robot0:grip')
+            gripper_target = cur_pos + np.random.uniform(low=-0.1, high=0.1, size=cur_pos.shape)
+            self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
+            for _ in range(10):
+                self.sim.step()
+
         return True
 
     def get_random_object_pos(self):
