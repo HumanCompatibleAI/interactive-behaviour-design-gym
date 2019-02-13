@@ -28,6 +28,8 @@ class FetchEnv(robot_env.RobotEnv):
                                    np.array([1.24675493, 0.63837527]),
                                    np.array([1.30236267, 0.65196929])]
 
+    fixed_goal_pos = np.array([1.4, 1.0, 0.45])
+
     def __init__(
         self, model_path, n_substeps, gripper_extra_height, block_gripper,
         has_object, target_in_the_air, target_offset, obj_range, target_range,
@@ -60,7 +62,6 @@ class FetchEnv(robot_env.RobotEnv):
         self.reward_type = reward_type
         self.initial_block_positions = None
         self.fixed_goal = False
-        self.fixed_goal_pos = None
         self.perturb_initial_position = False
 
         super(FetchEnv, self).__init__(
@@ -194,8 +195,6 @@ class FetchEnv(robot_env.RobotEnv):
 
     def _sample_goal(self):
         if self.fixed_goal:
-            if self.fixed_goal_pos is None:
-                self.fixed_goal_pos = self.get_random_goal_pos()
             goal = self.fixed_goal_pos
         else:
             goal = self.get_random_goal_pos()
