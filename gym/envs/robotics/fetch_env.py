@@ -28,7 +28,7 @@ class FetchEnv(robot_env.RobotEnv):
                                    np.array([1.24675493, 0.63837527]),
                                    np.array([1.30236267, 0.65196929])]
 
-    fixed_goal_pos = np.array([1.4, 1.0, 0.45])
+    fixed_goal_pos = np.array([1.2, 0.6, 0.6])
 
     def __init__(
         self, model_path, n_substeps, gripper_extra_height, block_gripper,
