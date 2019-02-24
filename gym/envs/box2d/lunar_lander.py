@@ -300,6 +300,31 @@ class LunarLander(gym.Env, EzPickle):
             - 100*np.sqrt(state[2]*state[2] + state[3]*state[3]) \
             - 100*abs(state[4]) + 10*state[6] + 10*state[7]   # And ten points for legs contact, the idea is if you
                                                               # lose contact again after landing, you get negative reward
+
+        ##############my shaping
+        xPos, yPos, xVel, yVel = state[0], state[1], state[2], state[3]
+        vel = np.sqrt(xVel**2 + yVel**2)
+        dist = np.sqrt(xPos**2 + yPos**2)
+        both_legs_on_ground = (state[6] + state[7]) // 2 #=1 iff both legs on ground
+        between_flags = abs(xPos) < 0.1
+        has_landed = between_flags and both_legs_on_ground
+        emphasize_small_vel = 1 / (100*vel + .1)
+        dist_threshold = 0.4
+        far_from_goal = dist >= dist_threshold
+        y_threshold = 0.3
+        close_in_y = yPos < 0.3
+        small_pos_y_vel = 100*yVel < 10
+
+        shaping -= 100*far_from_goal * emphasize_small_vel #punish not closing distance fast enough if you're far away
+        shaping -= 100*(not far_from_goal) * abs(yVel) #punish coming too hot if you're close
+        ####new run
+        shaping -= 100*has_landed * np.sqrt(4*yVel**2 + xVel**2) #penalize any movement if we're at the goal, especially lifting back up
+        shaping += 150 * (not between_flags) * np.sign(xPos) * (-1 * xVel) #close in height, focus on/reward getting closer in x
+        ####new run
+        shaping += 200*(not between_flags) * both_legs_on_ground * small_pos_y_vel * abs(yVel) #if both legs on ground, but not b/t flags, need some small lift to adjust position => reward lifting
+        shaping -= self.game_over * 100
+        #############end my shaping
+
         if self.prev_shaping is not None:
             reward = shaping - self.prev_shaping
         self.prev_shaping = shaping
