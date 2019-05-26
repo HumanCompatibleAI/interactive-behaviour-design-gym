@@ -285,7 +285,7 @@ class ImageEncoder(object):
 
         logger.debug('Starting ffmpeg with "%s"', ' '.join(self.cmdline))
         if hasattr(os,'setsid'): #setsid not present on Windows
-            self.proc = subprocess.Popen(self.cmdline, stdin=subprocess.PIPE, preexec_fn=os.setsid)
+            self.proc = subprocess.Popen(self.cmdline, stdin=subprocess.PIPE, start_new_session=True)
         else:
             self.proc = subprocess.Popen(self.cmdline, stdin=subprocess.PIPE)
 
